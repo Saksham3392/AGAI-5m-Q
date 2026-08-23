@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Systems Lab - Transformer & Deep Learning Compiler</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              500: '#3b82f6',
+              600: '#2563eb',
+              700: '#1d4ed8',
+              900: '#0f172a',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <!-- Monaco Editor CDN -->
+  <link rel="stylesheet" data-name="vs/editor/editor.main" href="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/editor/editor.main.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
+
+  <!-- Pyodide Python WebAssembly CDN -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
+
+  <!-- Marked.js (Markdown) & KaTeX (Math Formulas) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+
+  <!-- Highlight.js for Syntax Highlighting in Markdown -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+
+  <!-- Custom CSS -->
+  <link rel="stylesheet" href="style.css?v=10.0" />
+</head>
+<body class="bg-[#080c14] text-slate-100 flex flex-col h-screen overflow-hidden select-none">
+
+  <!-- ================= TOP NAVIGATION BAR ================= -->
+  <header class="h-14 bg-[#0d131f] border-b border-[#1c2638] px-4 flex items-center justify-between shrink-0 z-30">
+    
+    <!-- Left: Brand + WASM Badge + Tagline -->
+    <div class="flex items-center gap-3 min-w-max">
+      <!-- Blue Glowing Sphere Icon -->
+      <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-400 p-0.5 flex items-center justify-center shadow-lg shadow-blue-500/20">
+        <div class="w-full h-full bg-[#0d131f] rounded-full flex items-center justify-center">
+          <div class="w-4 h-4 rounded-full bg-gradient-to-tr from-blue-500 to-cyan-300"></div>
+        </div>
+      </div>
+
+      <div class="flex flex-col">
+        <div class="flex items-center gap-2">
+          <span class="font-extrabold text-sm md:text-base text-white tracking-tight">AI Systems Lab</span>
+          <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-blue-950/60 text-blue-300 border border-blue-700/50 font-semibold">Python 3.11 WASM</span>
+        </div>
+        <span class="text-[10px] text-slate-400 font-mono tracking-tight hidden lg:inline">GPT Decoder • LoRA • Causal Attention • RAG • Top-P</span>
+      </div>
+    </div>
+
+    <!-- Center: Navigation Controls -->
+    <div class="flex items-center gap-1.5 md:gap-2">
+      <!-- Prev Button -->
+      <button id="btn-prev-problem" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent hover:border-slate-700 transition-colors" title="Previous Question">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+      </button>
+
+      <!-- Problem Select Dropdown -->
+      <div class="relative">
+        <select id="problem-select" class="appearance-none bg-[#0e1424] text-slate-100 text-xs font-semibold px-3 py-1.5 pr-8 rounded-lg border border-slate-700 hover:border-slate-600 focus:outline-none focus:border-blue-500 cursor-pointer max-w-[210px] md:max-w-[280px] truncate shadow-inner">
+          <!-- Populated by JavaScript -->
+        </select>
+        <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-slate-400">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        </div>
+      </div>
+
+      <!-- Next Button -->
+      <button id="btn-next-problem" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 border border-transparent hover:border-slate-700 transition-colors" title="Next Question">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+      </button>
+
+      <!-- Solved Status Badge Button -->
+      <div id="badge-status-solved" class="hidden sm:flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-950/40 text-emerald-400 border border-emerald-600/40 font-mono">
+        <span>Solved ✓</span>
+      </div>
+
+      <!-- Reset All Button -->
+      <button id="btn-reset-all" class="hidden md:flex items-center gap-1.5 text-xs text-slate-300 bg-slate-800/80 hover:bg-slate-700 hover:text-white px-2.5 py-1 rounded-lg border border-slate-700 transition-all font-medium" title="Reset all solved states and code back to default">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+        <span>Reset All</span>
+      </button>
+    </div>
+
+    <!-- Right: Runtime Status + Note + Run + Submit -->
+    <div class="flex items-center gap-2">
+      <!-- Status Pill -->
+      <div id="compiler-status-pill" class="hidden xl:flex items-center gap-1.5 text-[11px] font-mono px-2.5 py-1 rounded-full bg-[#0e1424] border border-slate-800 text-slate-300">
+        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="compiler-status-text">Python 3.11 + NumPy Ready</span>
+      </div>
+
+      <!-- Note Button -->
+      <button id="btn-open-note" class="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg bg-rose-950/50 hover:bg-rose-900/60 text-rose-300 border border-rose-800/60 transition-all shadow-sm">
+        <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+        <span>Note</span>
+      </button>
+
+      <!-- Run Button (Shift + Enter) -->
+      <button id="btn-run" class="flex items-center gap-1.5 text-xs font-semibold px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-100 border border-slate-700 transition-all active:scale-95">
+        <svg class="w-3.5 h-3.5 text-slate-300" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+        <span>Run</span>
+        <span class="text-[10px] text-slate-400 font-mono hidden sm:inline">Shift+↵</span>
+      </button>
+
+      <!-- Submit Button (Ctrl + Enter) -->
+      <button id="btn-submit" class="flex items-center gap-1.5 text-xs font-semibold px-4 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-900/20 transition-all active:scale-95">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"></path></svg>
+        <span>Submit</span>
+        <span class="text-[10px] text-emerald-200 font-mono hidden sm:inline">Ctrl+↵</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= MAIN WORKSPACE (SPLIT PANES) ================= -->
+  <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+    
+    <!-- LEFT PANE: PROBLEM DESCRIPTION & HINTS -->
+    <section class="w-full md:w-[46%] h-full flex flex-col bg-[#0b0f19] border-r border-[#1c2638] overflow-hidden">
+      
+      <!-- Top Subtab Bar: Description | Hints + Difficulty Badge -->
+      <div class="h-10 bg-[#0e1424] border-b border-[#1c2638] px-4 flex items-center justify-between shrink-0">
+        <div class="flex items-center gap-4 h-full">
+          <button id="tab-btn-desc" class="nav-tab-btn active h-full text-xs font-semibold flex items-center gap-1.5 text-blue-400 border-b-2 border-blue-500 transition-colors">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <span>Description</span>
+          </button>
+          <button id="tab-btn-hints" class="nav-tab-btn h-full text-xs font-medium flex items-center gap-1.5 text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition-colors">
+            <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            <span>Hints</span>
+          </button>
+        </div>
+
+        <!-- Difficulty Pill Badge -->
+        <div class="flex items-center gap-2">
+          <span id="problem-difficulty" class="text-xs px-2.5 py-0.5 rounded-full font-medium bg-amber-900/30 text-amber-400 border border-amber-600/40">Medium</span>
+        </div>
+      </div>
+
+      <!-- Problem Content Container -->
+      <div class="flex-1 overflow-y-auto p-5 select-text space-y-4">
+        
+        <!-- DESCRIPTION TAB CONTENT -->
+        <div id="subtab-content-desc" class="space-y-4">
+          <!-- Problem Title -->
+          <h2 id="problem-title" class="text-xl font-bold text-white tracking-tight">1. GPT-Style Decoder Block</h2>
+
+          <!-- Tags List -->
+          <div id="problem-tags-container" class="flex items-center gap-1.5 flex-wrap">
+            <!-- Populated by JS -->
+          </div>
+
+          <!-- Problem Description Rendered Text -->
+          <div id="problem-desc-body" class="markdown-body text-slate-300 leading-relaxed text-sm">
+            <!-- Rendered by Marked.js / KaTeX -->
+          </div>
+        </div>
+
+        <!-- HINTS TAB CONTENT -->
+        <div id="subtab-content-hints" class="hidden space-y-4">
+          <div class="flex items-center justify-between bg-slate-900/60 p-3 rounded-lg border border-slate-800">
+            <div class="flex items-center gap-2">
+              <span class="text-amber-400 text-base">🪄</span>
+              <span class="text-xs font-semibold text-slate-200">Progressive Step Hints</span>
+            </div>
+            <span class="text-[11px] text-slate-400 font-mono">Reveal one by one</span>
+          </div>
+
+          <div id="hints-accordion-container" class="space-y-3">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- RIGHT PANE: CODE EDITOR + TESTCASE RUNNER -->
+    <section class="w-full md:w-[54%] h-full flex flex-col bg-[#070b12] overflow-hidden">
+      
+      <!-- EDITOR HEADER TAB -->
+      <div class="h-10 bg-[#0d131f] border-b border-[#1c2638] px-4 flex items-center justify-between shrink-0">
+        <!-- Active File Tab -->
+        <div class="flex items-center gap-2 text-xs font-mono text-slate-200">
+          <svg class="w-3.5 h-3.5 text-blue-400" fill="currentColor" viewBox="0 0 24 24"><path d="M14.25.75H4.5A2.25 2.25 0 0 0 2.25 3v18A2.25 2.25 0 0 0 4.5 23.25h15A2.25 2.25 0 0 0 21.75 21V8.25L14.25.75ZM13.5 9V2.25L20.25 9H13.5Z"/></svg>
+          <span class="font-semibold text-blue-300">solution.py</span>
+        </div>
+
+        <!-- Editor Info & Controls -->
+        <div class="flex items-center gap-3 text-xs text-slate-400 font-mono">
+          <span id="editor-cursor-pos">Ln 1, Col 1</span>
+        </div>
+      </div>
+
+      <!-- MONACO EDITOR CONTAINER -->
+      <div class="flex-1 relative w-full overflow-hidden bg-[#060911]">
+        <div id="monaco-container" class="absolute inset-0 w-full h-full"></div>
+      </div>
+
+      <!-- BOTTOM TESTCASES & RESULTS PANEL -->
+      <div class="h-56 md:h-64 bg-[#090d16] border-t border-[#1c2638] flex flex-col shrink-0">
+        
+        <!-- Panel Header Tabs & Actions -->
+        <div class="h-9 bg-[#0e1424] border-b border-[#1c2638] px-3 flex items-center justify-between shrink-0">
+          <!-- Subtabs -->
+          <div class="flex items-center gap-4 h-full">
+            <button data-panel-tab="testcase" class="panel-tab-btn active h-full text-xs font-semibold flex items-center gap-1.5 text-blue-400 border-b-2 border-blue-500 transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+              <span>Test Cases</span>
+            </button>
+            <button data-panel-tab="result" class="panel-tab-btn h-full text-xs font-medium flex items-center gap-1.5 text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition-colors">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+              <span>Test Results</span>
+            </button>
+            <button data-panel-tab="console" class="panel-tab-btn h-full text-xs font-medium flex items-center gap-1.5 text-slate-400 hover:text-slate-200 border-b-2 border-transparent transition-colors">
+              <span class="font-mono text-slate-500">>_</span>
+              <span>Console Log</span>
+            </button>
+          </div>
+
+          <!-- Right Utility Buttons -->
+          <div class="flex items-center gap-1.5">
+            <!-- Reset Code Button -->
+            <button id="btn-reset-code" class="px-2.5 py-0.5 text-xs text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700 rounded border border-slate-700 transition-colors flex items-center gap-1" title="Reset code to original template">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              <span>Reset Code</span>
+            </button>
+
+            <!-- Solution Button -->
+            <button id="btn-load-solution" class="px-2.5 py-0.5 text-xs font-medium text-indigo-300 hover:text-white bg-indigo-950/70 hover:bg-indigo-900/80 rounded border border-indigo-700/60 transition-colors flex items-center gap-1" title="Load Reference Solution into Editor">
+              <span>💡 Solution</span>
+            </button>
+
+            <!-- Clear Console -->
+            <button id="btn-clear-console" class="p-1 text-slate-400 hover:text-white rounded hover:bg-slate-800 transition-colors" title="Clear results and console">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- PANEL CONTENT 1: TESTCASE INPUTS -->
+        <div id="panel-testcase-inputs" class="flex-1 p-3 overflow-y-auto flex flex-col gap-2 select-text">
+          <!-- Case Tabs -->
+          <div id="testcase-tab-pills" class="flex items-center gap-1.5 flex-wrap">
+            <!-- Populated by JS: Case 1, Case 2, Case 3, + Custom Case -->
+          </div>
+
+          <div class="text-[11px] text-slate-400 font-mono flex items-center justify-between">
+            <span>Input (JSON parameters):</span>
+            <span id="custom-case-hint" class="hidden text-cyan-400">Editable JSON input</span>
+          </div>
+
+          <div class="flex-1 relative min-h-[90px]">
+            <textarea id="testcase-json-input" class="w-full h-full bg-[#05080f] border border-slate-800 rounded-lg p-2.5 font-mono text-xs text-slate-200 focus:outline-none focus:border-blue-500 resize-none" spellcheck="false"></textarea>
+          </div>
+        </div>
+
+        <!-- PANEL CONTENT 2: TEST RESULTS -->
+        <div id="panel-testcase-results" class="hidden flex-1 p-3 overflow-y-auto select-text space-y-3">
+          <!-- Result Status Banner -->
+          <div id="result-status-banner" class="flex items-center justify-between p-2.5 rounded-lg border border-slate-800 bg-slate-900/60">
+            <div class="flex items-center gap-2">
+              <span id="result-status-badge" class="px-2.5 py-0.5 rounded text-xs font-bold font-mono bg-slate-800 text-slate-300">Run to Execute</span>
+              <span id="result-runtime-text" class="text-xs text-slate-400 font-mono">0 ms</span>
+            </div>
+            <span id="result-testcase-summary" class="text-xs text-slate-400 font-mono">0/0 Passed</span>
+          </div>
+
+          <!-- Testcase Result Tabs -->
+          <div id="result-cases-tabs" class="flex items-center gap-1.5 flex-wrap"></div>
+
+          <!-- Result Details (Input / Expected / Actual) -->
+          <div id="result-case-details" class="space-y-2 text-xs font-mono">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- PANEL CONTENT 3: CONSOLE LOG -->
+        <div id="panel-console-log" class="hidden flex-1 p-3 overflow-y-auto select-text bg-[#05080f]">
+          <pre id="console-output-text" class="font-mono text-xs text-slate-300 whitespace-pre-wrap">Compiler output and prints will appear here...</pre>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= NOTE MODAL ================= -->
+  <div id="note-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 hidden">
+    <div class="bg-[#0e1424] border border-slate-700 rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden flex flex-col">
+      <div class="p-4 border-b border-slate-800 flex items-center justify-between bg-[#131b2e]">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-rose-500"></span>
+          <h3 class="font-bold text-sm text-white">Compiler Instructions & Exam Guidelines</h3>
+        </div>
+        <button id="btn-close-note" class="text-slate-400 hover:text-white p-1 rounded-lg">✕</button>
+      </div>
+
+      <div class="p-5 space-y-4 text-xs text-slate-300 leading-relaxed overflow-y-auto max-h-[75vh]">
+        <div class="p-3 bg-blue-950/30 border border-blue-800/40 rounded-xl space-y-1">
+          <h4 class="font-bold text-blue-300">⚡ In-Browser WebAssembly Execution</h4>
+          <p>This compiler runs Python 3.11 with <strong>NumPy</strong> completely inside your browser via WebAssembly (Pyodide). No backend server lag.</p>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="font-bold text-slate-100">📌 Pre-written Header and Tail</h4>
+          <ul class="list-disc pl-5 space-y-1 text-slate-300">
+            <li><strong>Header:</strong> Includes standard imports, helper functions, and <code class="text-cyan-300">clean_output()</code> for serializing lists and NumPy arrays.</li>
+            <li><strong>Body:</strong> Write your model architecture / logic here.</li>
+            <li><strong>Tail:</strong> Reads standard input JSON (<code class="text-cyan-300">sys.stdin</code>) and outputs formatted JSON for testing.</li>
+          </ul>
+        </div>
+
+        <div class="space-y-2">
+          <h4 class="font-bold text-slate-100">⌨️ Keyboard Shortcuts</h4>
+          <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
+            <div class="p-2 bg-slate-900 border border-slate-800 rounded-lg">
+              <span class="text-amber-300">Shift + Enter</span>: Run current test case
+            </div>
+            <div class="p-2 bg-slate-900 border border-slate-800 rounded-lg">
+              <span class="text-emerald-300">Ctrl + Enter</span>: Submit against all cases
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <!-- Application Module Script -->
+  <script type="module" src="app.js?v=11.0"></script>
+</body>
+</html>
