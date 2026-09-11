@@ -1,4 +1,4 @@
-# DeepLearn Judge: Transformer Coding Platform & In-Browser Compiler
+# AGAI 5 marks coding Q for ST-2
 
 An interactive coding practice platform and in-browser Python WebAssembly compiler for solving low-level Transformer implementations without external machine-learning libraries.
 
