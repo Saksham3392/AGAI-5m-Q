@@ -2,6 +2,10 @@
 
 An interactive coding practice platform and in-browser Python WebAssembly compiler for solving low-level Transformer implementations without external machine-learning libraries.
 
+🌐 **Live application:**
+
+> **[https://agai-5m-q.onrender.com](https://agai-5m-q.onrender.com)**
+
 ---
 
 ## 🚀 Quick Deployment to Render (2 Steps)
